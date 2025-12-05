@@ -27,7 +27,7 @@ source venv/bin/activate
 # 2. Запустите программу
 python3 parse_trades.py
 
-Вариант 2: Запуск на другом компьютере (полная установка)
+### Вариант 2: Запуск на другом компьютере
 # 1. Клонируйте репозиторий
 git clone https://github.com/asalya125/torgi_parser.git
 cd torgi_parser
