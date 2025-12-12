@@ -1,3 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from bs4 import BeautifulSoup
+import requests
+import re
+
+def parse_price(price_text):
+    """Преобразует текст цены в число"""
+    if not price_text:
+        return 0
+    clean_text = re.sub(r'[^\d.]', '', price_text.replace(',', '.'))
+    parts = clean_text.split('.')
+    if len(parts) > 1:
+        clean_text = parts[0] + '.' + ''.join(parts[1:])
+    try:
+        return float(clean_text) if clean_text else 0
+    except ValueError:
+        print(f"⚠️ Ошибка преобразования цены: '{price_text}' -> '{clean_text}'")
+        return 0
+
 def main():
     print("🔍 ПАРСЕР РЕАЛЬНОГО САЙТА Torgi.org")
     print("=" * 50)
@@ -16,7 +37,7 @@ def main():
         
         lots = []
         
-        # Находим все таблицы
+        print("🔍 Анализируем все строки таблицы...")
         tables = soup.find_all('table')
         print(f"📊 Найдено таблиц: {len(tables)}")
         
@@ -37,37 +58,27 @@ def main():
                     for cell in cells:
                         cell_text = cell.get_text(strip=True)
                         
-                        # Поиск цены
                         if re.search(r'\d[\d\s]*\.?\d*\.?\d*\s*руб', cell_text, re.I):
                             price_text = cell_text
                         
-                        # Поиск названия и ссылки
                         elif len(cell_text) > 30 and not price_text and not re.search(r'\d{2}-\d{2}-\d{4}', cell_text):
                             name = cell_text
-                            
-                            # 🔧 ИСПРАВЛЕНИЕ: Ищем ссылку в ячейке
                             link_elem = cell.find('a', href=True)
                             if link_elem:
                                 link_href = link_elem.get('href')
-                                # 🔧 ИСПРАВЛЕНИЕ: Правильно обрабатываем ссылки
                                 if link_href:
                                     if link_href.startswith('/'):
-                                        # Относительная ссылка: /index.php?...
                                         link = 'https://torgi.org' + link_href
                                     elif link_href.startswith('?'):
-                                        # Ссылка начинается с ?: ?class=...
                                         link = 'https://torgi.org/index.php' + link_href
                                     elif link_href.startswith('index.php'):
-                                        # Ссылка начинается с index.php?...
                                         link = 'https://torgi.org/' + link_href
                                     else:
                                         link = link_href
                         
-                        # Поиск региона
                         elif len(cell_text) < 30 and re.search(r'[А-Я][а-я]+\s*обл|г\.|Респ', cell_text):
                             region = cell_text
                     
-                    # Если нашли и цену и название
                     if price_text and name:
                         price = parse_price(price_text)
                         if price > 0:
@@ -79,12 +90,58 @@ def main():
                                 'price_text': price_text
                             }
                             
-                            # Проверяем на дубликаты
                             if not any(l['name'] == name and l['price'] == price for l in lots):
                                 lots.append(lot)
                                 print(f"✅ Лот {len(lots)}: {price:,.2f} руб - {name[:50]}...")
-                                # 🔧 ДОПОЛНИТЕЛЬНО: Показываем ссылку для отладки
-                                if link:
-                                    print(f"   🔗 Ссылка: {link}")
         
-        # ... остальной код без изменений ...
+        if lots:
+            sorted_lots = sorted(lots, key=lambda x: x['price'], reverse=True)
+            
+            print(f"\n📊 РЕАЛЬНЫЕ ЛОТЫ С САЙТА: Найдено {len(sorted_lots)} лотов")
+            print("=" * 100)
+            
+            for i, lot in enumerate(sorted_lots, 1):
+                print(f"{i:2d}. 💰 {lot['price']:12,.2f} руб")
+                if lot['region']:
+                    print(f"    📍 {lot['region']}")
+                print(f"    🏷  {lot['name'][:80]}...")
+                if lot['link']:
+                    print(f"    🔗 {lot['link']}")
+                print("-" * 100)
+            
+            print("\n🎯 ФИЛЬТРАЦИЯ ПО ЦЕНЕ")
+            try:
+                min_input = input("Минимальная цена (руб, Enter - пропустить): ").strip()
+                max_input = input("Максимальная цена (руб, Enter - пропустить): ").strip()
+                
+                min_price = float(min_input) if min_input else None
+                max_price = float(max_input) if max_input else None
+                
+                filtered_lots = []
+                for lot in sorted_lots:
+                    if min_price and lot['price'] < min_price:
+                        continue
+                    if max_price and lot['price'] > max_price:
+                        continue
+                    filtered_lots.append(lot)
+                
+                if filtered_lots:
+                    print(f"\n🔍 ОТФИЛЬТРОВАНО ЛОТОВ: {len(filtered_lots)}")
+                    for i, lot in enumerate(filtered_lots, 1):
+                        print(f"{i}. {lot['price']:,.2f} руб - {lot['name'][:70]}...")
+                else:
+                    print("❌ Нет лотов в указанном диапазоне цен")
+                    
+            except ValueError:
+                print("❌ Ошибка ввода цен")
+                
+        else:
+            print("❌ Не удалось найти лоты в таблицах")
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Ошибка сети: {e}")
+    except Exception as e:
+        print(f"❌ Неожиданная ошибка: {e}")
+
+if __name__ == "__main__":
+    main()
