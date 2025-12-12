@@ -26,21 +26,29 @@ python3 parse_trades.py
 ### Вариант 2: Запуск на другом компьютере (полная установка)
  1. Клонируйте репозиторий
 git clone https://github.com/asalya125/torgi_parser.git
+
 cd torgi_parser
 
  2. Создайте виртуальное окружение
+ 
 python3 -m venv venv
 
- 3. Активируйте виртуальное окружение
+ 3. Активируйте виртуальное окружение\
+
  На macOS/Linux:
+ 
 source venv/bin/activate
+
  На Windows:
+ 
  venv\Scripts\activate
 
  4. Установите зависимости
+    
 pip install -r requirements.txt
 
  5. Запустите программу
+    
 python parse_trades.py
 
 
