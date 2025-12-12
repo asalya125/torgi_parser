@@ -1,3 +1,5 @@
+cd ~/torgi_parser
+cat > parse_trades_fixed.py << 'EOF'
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -152,3 +154,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+EOF
