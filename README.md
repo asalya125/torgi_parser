@@ -20,8 +20,9 @@
 
 ### Вариант 1: Запуск на текущем компьютере
 ```bash
- source venv/bin/activate
-python3 parse_trades.py
+ cd ~/torgi_parser
+source venv/bin/activate
+python parse_trades.py
 ```
 ### Вариант 2: Запуск на другом компьютере (полная установка)
  1. Клонируйте репозиторий
